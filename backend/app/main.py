@@ -1,3 +1,4 @@
+from .controllers.auth_controller import router as auth_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import Base, engine
@@ -7,7 +8,7 @@ from . import models
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Creator Studio API")
-
+app.include_router(auth_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
