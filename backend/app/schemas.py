@@ -39,7 +39,7 @@ class ContentPieceOut(BaseModel):
     status: str
     script: Optional[str]
     created_at: datetime
-
+    thumbnail_url: Optional[str] = None
     tags: List[TagOut] = []
     comments: List[CommentOut] = []
 

@@ -32,7 +32,7 @@ class ContentPiece(Base):
     script = Column(String, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    thumbnail_url = Column(String, nullable=True)
     owner = relationship("User", back_populates="content_pieces")
 
     comments = relationship(

@@ -6,7 +6,11 @@ from ..models import ContentPiece, User, Tag
 from ..schemas import ContentPieceCreate, ContentPieceOut
 from ..auth import get_current_user
 from typing import Optional
-
+import os
+import uuid
+from fastapi import UploadFile, File
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 router = APIRouter(prefix="/content", tags=["content"])
 
@@ -106,3 +110,28 @@ def delete_content(
     db.delete(piece)
     db.commit()
     return {"message": "Content piece deleted"}
+
+@router.post("/{content_id}/thumbnail", response_model=ContentPieceOut)
+def upload_thumbnail(
+    content_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    piece = db.query(ContentPiece).filter(ContentPiece.id == content_id).first()
+    if not piece:
+        raise HTTPException(status_code=404, detail="Content piece not found")
+    if piece.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this content piece")
+
+    file_extension = file.filename.split(".")[-1]
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    file_path = os.path.join(UPLOAD_DIR, unique_filename)
+
+    with open(file_path, "wb") as buffer:
+        buffer.write(file.file.read())
+
+    piece.thumbnail_url = f"/{UPLOAD_DIR}/{unique_filename}"
+    db.commit()
+    db.refresh(piece)
+    return piece
