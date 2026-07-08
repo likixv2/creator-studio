@@ -5,6 +5,8 @@ from ..database import get_db
 from ..models import ContentPiece, User, Tag
 from ..schemas import ContentPieceCreate, ContentPieceOut
 from ..auth import get_current_user
+from typing import Optional
+
 
 router = APIRouter(prefix="/content", tags=["content"])
 
@@ -33,13 +35,24 @@ def create_content(
     db.refresh(piece)
     return piece
 
-
 @router.get("/", response_model=List[ContentPieceOut])
 def list_content(
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 10,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return db.query(ContentPiece).filter(ContentPiece.owner_id == current_user.id).all()
+    query = db.query(ContentPiece).filter(ContentPiece.owner_id == current_user.id)
+
+    if status:
+        query = query.filter(ContentPiece.status.ilike(status.strip()))
+
+    if search:
+        query = query.filter(ContentPiece.title.ilike(f"%{search.strip()}%"))
+
+    return query.offset(skip).limit(limit).all()
 
 
 @router.get("/{content_id}", response_model=ContentPieceOut)
